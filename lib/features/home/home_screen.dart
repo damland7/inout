@@ -478,6 +478,12 @@ class _MealCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.w700),
               ),
+              IconButton(
+                key: ValueKey('home-delete-${meal.id}'),
+                tooltip: 'Delete ${meal.foodName}',
+                onPressed: () => _deleteMeal(context, meal),
+                icon: const Icon(Icons.delete_outline),
+              ),
             ],
           ),
         ),
@@ -534,12 +540,93 @@ class _WorkoutCard extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium
                   ?.copyWith(fontWeight: FontWeight.w700),
             ),
+            IconButton(
+              key: ValueKey('home-delete-${workout.id}'),
+              tooltip: 'Delete ${workout.activity}',
+              onPressed: () => _deleteWorkout(context, workout),
+              icon: const Icon(Icons.delete_outline),
+            ),
           ],
         ),
       ),
     ),
   );
 }
+
+Future<void> _deleteMeal(BuildContext context, MealEntry meal) async {
+  final services = AppScope.of(context);
+  final total = services.calculations.mealTotal(meal);
+  final confirmed = await _confirmDelete(
+    context,
+    title: 'Delete this meal?',
+    message:
+        '${meal.foodName} (${_servings(meal.servings)} servings, '
+        '${_displayKcal(total)} kcal) '
+        'will be removed from ${meal.mealType.label}.',
+  );
+  if (confirmed != true || !context.mounted) return;
+  services.state.removeEntry(meal.id);
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text('${meal.foodName} deleted'),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'UNDO',
+          onPressed: () => services.state.restoreMeal(meal),
+        ),
+      ),
+    );
+}
+
+Future<void> _deleteWorkout(BuildContext context, WorkoutEntry workout) async {
+  final state = AppScope.of(context).state;
+  final confirmed = await _confirmDelete(
+    context,
+    title: 'Delete this workout?',
+    message:
+        '${workout.activity} (${workout.minutes} min, '
+        '${_displayKcal(workout.kcalBurned)} kcal) will be removed.',
+  );
+  if (confirmed != true || !context.mounted) return;
+  state.removeEntry(workout.id);
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text('${workout.activity} deleted'),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: 'UNDO',
+          onPressed: () => state.restoreWorkout(workout),
+        ),
+      ),
+    );
+}
+
+Future<bool?> _confirmDelete(
+  BuildContext context, {
+  required String title,
+  required String message,
+}) => showDialog<bool>(
+  context: context,
+  builder: (context) => AlertDialog(
+    title: Text(title),
+    content: Text(message),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context, false),
+        child: const Text('Cancel'),
+      ),
+      FilledButton(
+        key: const ValueKey('home-delete-confirm'),
+        onPressed: () => Navigator.pop(context, true),
+        child: const Text('Delete'),
+      ),
+    ],
+  ),
+);
 
 String _servings(double value) => value == value.roundToDouble()
     ? value.toInt().toString()
