@@ -136,4 +136,100 @@ void main() {
       expect(find.text('Today, Fri 20 Nov'), findsOneWidget);
     });
   });
+
+  group('S07 Add / Edit Meal', () {
+    testWidgets('validates, calculates live total and saves one meal', (
+      tester,
+    ) async {
+      final services = await _open(tester, route: AppRoutes.mealEditor);
+      final count = services.state.meals.length;
+
+      await _tap(tester, find.byKey(const ValueKey('meal-save')));
+      expect(find.text('Enter a food name'), findsOneWidget);
+      expect(find.text('Enter calories between 1 and 5,000'), findsOneWidget);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('meal-name')),
+        'Homemade pasta',
+      );
+      await tester.enterText(find.byKey(const ValueKey('meal-kcal')), '200');
+      await _tap(tester, find.byKey(const ValueKey('meal-servings-increase')));
+      expect(find.text('300 kcal'), findsOneWidget);
+
+      await _tap(tester, find.byKey(const ValueKey('meal-save')));
+      expect(find.text('Meal saved'), findsOneWidget);
+      expect(services.state.meals.length, count + 1);
+      final saved = services.state.meals.last;
+      expect(saved.foodName, 'Homemade pasta');
+      expect(saved.servings, 1.5);
+      expect(saved.kcalPerServing, 200);
+
+      await _tap(tester, find.byKey(const ValueKey('meal-saved-ok')));
+      await tester.scrollUntilVisible(find.text('Homemade pasta'), 220);
+      await tester.pumpAndSettle();
+      expect(find.text('Homemade pasta'), findsOneWidget);
+    });
+
+    testWidgets('editing keeps the id and deletion can be undone', (
+      tester,
+    ) async {
+      final services = await _open(tester);
+      final original = services.state.meals.first;
+      final count = services.state.meals.length;
+
+      tester
+          .state<NavigatorState>(find.byType(Navigator))
+          .pushNamed(
+            AppRoutes.mealEditor,
+            arguments: MealEditorArguments(entry: original),
+          );
+      await tester.pumpAndSettle();
+      expect(find.text('Edit Meal'), findsOneWidget);
+      await tester.enterText(find.byKey(const ValueKey('meal-kcal')), '310');
+      await _tap(tester, find.byKey(const ValueKey('meal-save')));
+      await _tap(tester, find.byKey(const ValueKey('meal-saved-ok')));
+      expect(services.state.meals.length, count);
+      expect(
+        services.state.meals
+            .firstWhere((meal) => meal.id == original.id)
+            .kcalPerServing,
+        310,
+      );
+
+      final edited = services.state.meals.firstWhere(
+        (meal) => meal.id == original.id,
+      );
+      tester
+          .state<NavigatorState>(find.byType(Navigator))
+          .pushNamed(
+            AppRoutes.mealEditor,
+            arguments: MealEditorArguments(entry: edited),
+          );
+      await tester.pumpAndSettle();
+      await _tap(tester, find.byKey(const ValueKey('meal-delete')));
+      await _tap(tester, find.byKey(const ValueKey('meal-delete-confirm')));
+      expect(services.state.meals.any((meal) => meal.id == edited.id), isFalse);
+      await tester.tap(find.text('UNDO'));
+      await tester.pumpAndSettle();
+      expect(
+        services.state.meals.where((meal) => meal.id == edited.id),
+        hasLength(1),
+      );
+    });
+  });
+
+  testWidgets('Home and Meal editor fit a small phone with large text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+    await _open(tester);
+    expect(tester.takeException(), isNull);
+    await _open(tester, route: AppRoutes.mealEditor);
+    expect(tester.takeException(), isNull);
+  });
 }
