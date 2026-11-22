@@ -10,7 +10,6 @@ import 'package:inout_app/features/profile/profile_screen.dart';
 import 'package:inout_app/shared/app_services.dart';
 import 'package:inout_app/shared/app_state.dart';
 import 'package:inout_app/shared/contracts.dart';
-import 'package:inout_app/shared/models.dart';
 import 'package:inout_app/shared/theme/app_theme.dart';
 
 final _today = DateTime(2026, 11, 20);
