@@ -38,10 +38,9 @@ Future<AppServices> _open(
 }
 
 Future<void> _push(WidgetTester tester, String route, Object arguments) async {
-  tester.state<NavigatorState>(find.byType(Navigator)).pushNamed(
-    route,
-    arguments: arguments,
-  );
+  tester
+      .state<NavigatorState>(find.byType(Navigator))
+      .pushNamed(route, arguments: arguments);
   await tester.pumpAndSettle();
 }
 
@@ -222,7 +221,10 @@ void main() {
       final before = services.state.workouts.length;
 
       await _tap(tester, find.byKey(const ValueKey('workout-save')));
-      expect(find.text('Choose an activity'), findsOneWidget);
+      final activity = tester.state<FormFieldState<String>>(
+        find.byKey(const ValueKey('workout-activity')),
+      );
+      expect(activity.errorText, 'Choose an activity');
       expect(
         find.text('Enter a duration between 1 and 600 minutes'),
         findsOneWidget,
@@ -252,9 +254,7 @@ void main() {
       expect(services.state.workouts.length, before + 1);
     });
 
-    testWidgets('edit keeps the same id; delete can be undone', (
-      tester,
-    ) async {
+    testWidgets('edit keeps the same id; delete can be undone', (tester) async {
       final services = await _open(tester, AppRoutes.history);
       final state = services.state;
       final original = state.workouts.first;
