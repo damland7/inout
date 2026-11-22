@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 
 import 'app/app_routes.dart';
 import 'app/inout_app.dart';
-import 'preview/preview_services.dart';
+import 'features/account/account_routes.dart';
+import 'features/food_workout_appearance_routes.dart';
+import 'shared/app_services.dart';
+import 'shared/theme/app_theme.dart';
 
-/// Own-screen preview; production shared services are integrated by their owners.
+/// InOut. The app opens on S01 Log In with the production state, the shared
+/// theme (Inter font, light/dark, accent) and every finished screen. Screens
+/// that are not merged yet show a placeholder.
 void main() {
-  const screen = String.fromEnvironment(
-    'PREVIEW_SCREEN',
-    defaultValue: 'history',
-  );
   runApp(
     InOutApp(
-      services: createPreviewServices(),
-      initialRoute: screen == 'profile' ? AppRoutes.profile : AppRoutes.history,
+      services: createAppServices(),
+      initialRoute: AppRoutes.login,
+      themeBuilder: buildAppTheme,
+      featureRoutes: {...accountRoutes, ...foodWorkoutAppearanceRoutes},
     ),
   );
 }

@@ -1,21 +1,19 @@
-import '../preview/preview_services.dart' as temporary;
 import 'app_state.dart';
+import 'calculations.dart';
 import 'contracts.dart';
+import 'theme/app_colors.dart';
+import 'validators.dart';
+import 'widgets/history_chart.dart';
 
-/// Builds the services the whole app uses: the production [InOutState]
-/// plus calculations, validators and the History chart.
+/// Builds the services the whole app uses: the production [InOutState],
+/// calculations, validators, the History chart and accent names.
 ///
-/// Calculations, validators and the chart are Berre's shared work. Until her
-/// implementations are merged, the preview adapters from `lib/preview/` are
-/// used here so the app runs. When they are ready, replace the three
-/// `temporary` values below; no screen needs to change.
-AppServices createAppServices({AppState? state}) {
-  final preview = temporary.createPreviewServices();
-  return AppServices(
-    state: state ?? InOutState(),
-    calculations: preview.calculations, // TODO(Berre): production calculations
-    validators: preview.validators, // TODO(Berre): production validators
-    historyChartBuilder: preview.historyChartBuilder, // TODO(Berre): chart
-    accentName: preview.accentName,
-  );
-}
+/// Screens only see these through `AppScope.of(context)`, so tests can pass
+/// their own [state] (for example with a fixed clock).
+AppServices createAppServices({AppState? state}) => AppServices(
+  state: state ?? InOutState(),
+  calculations: const InOutCalculations(),
+  validators: const InOutValidators(),
+  historyChartBuilder: buildHistoryChart,
+  accentName: accentNameFor,
+);
