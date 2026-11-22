@@ -102,7 +102,7 @@ void main() {
 
       await _type(tester, 'signup-password', '123456');
       await _type(tester, 'signup-confirm', '123456');
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(find.text('Password must be at least 6 characters'), findsNothing);
       expect(find.text('Passwords do not match'), findsNothing);
     });
@@ -145,7 +145,12 @@ void main() {
       await tester.tap(find.text('Forgot password?'));
       await tester.pumpAndSettle();
       expect(find.text('berre@example.com'), findsOneWidget);
-      await _tapButton(tester, 'Send Reset Link');
+      final send = find.widgetWithText(FilledButton, 'Send Reset Link');
+      await tester.ensureVisible(send);
+      await tester.tap(send);
+      // The spinner continues behind the confirmation dialog.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
       expect(find.text('Check your email'), findsOneWidget);
       await tester.tap(find.widgetWithText(FilledButton, 'Back to Log In'));
       await tester.pumpAndSettle();
@@ -172,7 +177,7 @@ void main() {
       }
       for (final value in ['1200', '5000']) {
         await _type(tester, 'goal-field', value);
-        await tester.pump();
+        await tester.pumpAndSettle();
         expect(find.text(message), findsNothing, reason: value);
       }
     });
